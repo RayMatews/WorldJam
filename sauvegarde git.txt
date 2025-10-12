@@ -1,0 +1,22 @@
+Dans ton dossier Flutter :
+
+git init
+git add .
+git commit -m "Version stable initiale"
+
+
+À chaque étape qui fonctionne :
+
+git add .
+git commit -m "Ajout du module enregistrement"
+
+
+Pour revenir à une version précédente :
+
+git checkout <commit_id>
+
+
+Tu peux aussi connecter un dépôt GitHub :
+
+git remote add origin https://github.com/<user>/<repo>.git
+git push -u origin main

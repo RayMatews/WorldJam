@@ -1,0 +1,12 @@
+Option 2 – Sauvegarde automatique locale
+
+Crée un script simple (Windows PowerShell ou macOS bash) qui copie ton dossier à chaque étape stable :
+
+Windows (save_project.ps1)
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+Copy-Item "C:\chemin\vers\worldjam_new_fixed" "D:\Backups\worldjam_$timestamp" -Recurse
+
+
+Exécute-le après chaque succès :
+
+powershell -ExecutionPolicy Bypass -File save_project.ps1

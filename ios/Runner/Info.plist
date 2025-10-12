@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- Autorisation micro pour enregistrement -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>WorldJam utilise le micro pour enregistrer des pistes audio.</string>
 </dict>
 </plist>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,41 +13,49 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  final supabase = Supabase.instance.client;
+  bool _isLogin = true;
+  String? _errorMessage;
 
-  Future<void> _signIn() async {
-    setState(() => _isLoading = true);
+  Future<void> _handleAuth() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final supabase = Supabase.instance.client;
+
     try {
-      final response = await supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      if (response.session != null && mounted) {
-        Navigator.pop(context); // retour vers HomePage
+      if (_isLogin) {
+        await supabase.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+      } else {
+        final result = await supabase.auth.signUp(
+          email: email,
+          password: password,
+        );
+
+        // ✅ Ajout automatique dans "profiles" après inscription
+        final user = result.user;
+        if (user != null) {
+          await supabase.from('profiles').insert({
+            'id': user.id,
+            'username': email.split('@').first, // pseudo par défaut
+          });
+        }
       }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
 
-  Future<void> _signUp() async {
-    setState(() => _isLoading = true);
-    try {
-      await supabase.auth.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vérifie ton email pour confirmer.')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
+      if (!mounted) return;
+      Navigator.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+    } on AuthException catch (e) {
+      setState(() => _errorMessage = e.message);
+    } catch (e) {
+      setState(() => _errorMessage = 'Erreur inconnue');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -56,68 +65,81 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
+      body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Connexion à WorldJam',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-              const SizedBox(height: 40),
-              TextField(
-                controller: _emailController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputStyle('Email'),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputStyle('Mot de passe'),
-              ),
-              const SizedBox(height: 32),
-              _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Column(
-                      children: [
-                        ElevatedButton(
-                          onPressed: _signIn,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurpleAccent,
-                            minimumSize: const Size(double.infinity, 50),
-                          ),
-                          child: const Text('Se connecter'),
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _signUp,
-                          child: const Text(
-                            "S'inscrire",
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        ),
-                      ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'WorldJam',
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurpleAccent,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                TextField(
+                  controller: _emailController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white24),
                     ),
-            ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Mot de passe',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white24),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                if (_errorMessage != null)
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                const SizedBox(height: 15),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _handleAuth,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurpleAccent,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 80,
+                      vertical: 15,
+                    ),
+                  ),
+                  child: Text(
+                    _isLogin ? 'Se connecter' : "S'inscrire",
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextButton(
+                  onPressed: () => setState(() => _isLogin = !_isLogin),
+                  child: Text(
+                    _isLogin
+                        ? "Pas encore de compte ? S'inscrire"
+                        : "Déjà un compte ? Se connecter",
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-
-  InputDecoration _inputStyle(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.grey),
-      filled: true,
-      fillColor: Colors.grey[900],
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
       ),
     );
   }

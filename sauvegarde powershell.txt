@@ -4,7 +4,7 @@ Crée un script simple (Windows PowerShell ou macOS bash) qui copie ton dossier 
 
 Windows (save_project.ps1)
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-Copy-Item "C:\chemin\vers\worldjam_new_fixed" "D:\Backups\worldjam_$timestamp" -Recurse
+Copy-Item "C:\Users\Client\worldjam_new_fixed" "C:\Backups\worldjam_$timestamp" -Recurse
 
 
 Exécute-le après chaque succès :
